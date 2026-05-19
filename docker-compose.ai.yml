@@ -1,0 +1,15 @@
+version: "3.9"
+
+# remember to drop this later.
+
+services:
+  ai:
+    build:
+      context: ./findash-ai
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./findash-ai/.env
+    environment:
+      - ALLOWED_ORIGINS=http://localhost:5173
+    restart: unless-stopped
