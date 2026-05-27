@@ -27,9 +27,6 @@ cp .env.example .env
 
 pip install -r requirements.txt
 uvicorn app.main:app --reload
-```
-
-Swagger UI: http://localhost:8000/docs
 
 ---
 
