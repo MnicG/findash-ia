@@ -3,8 +3,8 @@ from app.core.config import settings
 
 _client: OpenAI | None = None
 
-# Model to use from Chutes — swap this string to change models
-CHUTES_MODEL = "google/gemma-3-27b-it"  # Gemma 4 31B Turbo on Chutes
+# Model to use from Chutes — swap this single string to change models globally
+CHUTES_MODEL = "google/gemma-4-31B-turbo-TEE"
 
 
 def get_client() -> OpenAI:
@@ -22,7 +22,7 @@ def complete(system: str, messages: list[dict], max_tokens: int = 1024) -> str:
     all_messages = [{"role": "system", "content": system}] + messages
 
     response = get_client().chat.completions.create(
-        model="google/gemma-4-31B-turbo-TEE",
+        model=CHUTES_MODEL,
         max_tokens=max_tokens,
         messages=all_messages,
     )
