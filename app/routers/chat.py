@@ -22,7 +22,7 @@ class ChatResponse(BaseModel):
     reply: str
 
 
-@router.post("/", response_model=ChatResponse)
+@router.post("", response_model=ChatResponse)
 async def chat(body: ChatRequest):
     """
     Multi-turn chat with optional client context.
