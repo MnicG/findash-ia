@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional
+import json
 from app.models.schemas import ChatMessage, ClientContext
-from app.services.ia_client import complete
+from app.services.ia_client import complete_stream
 from app.core.security import require_internal_key
 
 router = APIRouter(dependencies=[Depends(require_internal_key)])
@@ -15,19 +17,17 @@ Be concise, professional, and data-driven. When client context is provided, alwa
 
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
-    client: Optional[ClientContext] = None   # optional context for personalization
+    client: Optional[ClientContext] = None
 
 
-class ChatResponse(BaseModel):
-    reply: str
+def event_generator(system: str, messages: list[dict]):
+    for chunk in complete_stream(system, messages):
+        yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+    yield "data: [DONE]\n\n"
 
 
-@router.post("", response_model=ChatResponse)
+@router.post("")
 async def chat(body: ChatRequest):
-    """
-    Multi-turn chat with optional client context.
-    The Node backend maintains conversation history and passes it each request.
-    """
     system = SYSTEM
     if body.client:
         symbols = [p.symbol for p in body.client.portfolio]
@@ -36,5 +36,12 @@ async def chat(body: ChatRequest):
             system += f" Portfolio: {', '.join(symbols)}."
 
     messages = [{"role": m.role, "content": m.content} for m in body.messages]
-    reply = complete(system, messages, max_tokens=1024)
-    return {"reply": reply}
+
+    return StreamingResponse(
+        event_generator(system, messages),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )
